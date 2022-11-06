@@ -3,13 +3,15 @@ module App
 using GenieFramework
 using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, TimeZones, ToStruct
 @genietools
-
+selected
 @handlers begin
   @out activetxn::Integer = 0
   @in command::String = ""
   @out contracts::Vector{Contract} = []
   @out current_contract::Contract = Contract()
   @in selected_contract_idx::Integer = -1
+  @in selected_contractpartner_idx::Integer = -1
+  @in selected_productitem_idx::Integer = -1
   @in selected_version::String = ""
   @out current_version::Integer = 0
   @out txn_time::ZonedDateTime = now(tz"Africa/Porto-Novo")
@@ -57,6 +59,7 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Ti
     contracts = LifeInsuranceDataModel.get_contracts()
     tab = "contracts"
     cs["loaded"] = "false"
+    prs = Dict{String,Any}("loaded" => "false")
     @show "contractsModel pushed"
   end
 
@@ -80,11 +83,66 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Ti
         cs["product_items"][1]["tariff_items"][1] = JSON.parse(JSON.json(tistruct))
         selected_contract_idx = -1
         tab = "csection"
+        @show cs["loaded"]
       catch err
         println("wassis shief gegangen ")
         @error "ERROR: " exception = (err, catch_backtrace())
       end
     end
+  end
+
+  @onchange selected_contractpartner_idx begin
+    if selected_contractpartner_idx != -1
+      @show selected_contractpartner_idx
+      selected_contractpartner_idx = -1
+    end
+  end
+
+  @onchange selected_productitem_idx begin
+    if selected_productitem_idx != -1
+      @show selected_productitem_idx
+      selected_productitem_idx = -1
+    end
+  end
+
+  @onchange command begin
+    if command == "add productitem"
+      @show command
+      command = ""
+    end
+    if command == "add contractpartner"
+      @show command
+      command = ""
+    end
+  end
+
+  @onchange selected_version begin
+    @info "version handler"
+    @show selected_version
+    if selected_version != ""
+      try
+        node = fn(histo, selected_version)
+        println(node)
+        txn_time = node["interval"]["tsdb_validfrom"]
+        ref_time = node["interval"]["tsworld_validfrom"]
+        current_version = parse(Int, selected_version)
+        @show txn_time
+        @show ref_time
+        @show current_version
+        @info "vor csection"
+        cs = JSON.parse(JSON.json(LifeInsuranceDataModel.csection(current_contract.id.value, txn_time, ref_time)))
+        cs["loaded"] = "true"
+        @info "vor tab "
+        tab = "csection"
+        ti = LifeInsuranceProduct.calculate!(cs["product_items"][1].tariff_items[1])
+        print("ti=")
+        println(ti)
+      catch err
+        println("wassis shief gegangen ")
+        @error "ERROR: " exception = (err, catch_backtrace())
+      end
+    end
+
   end
 end
 
@@ -98,7 +156,28 @@ function convert(node::BitemporalPostgres.Node)::Dict{String,Any}
   shdw = length(node.shadowed) == 0 ? [] : map(node.shadowed) do child
     convert(child)
   end
-  Dict("label" => string(i["ref_version"]), "interval" => i, "children" => shdw, "time_committed" => string(i["tsdb_validfrom"]), "time_valid_asof" => string(i["tsworld_validfrom"]))
+  Dict("version" => string(i["ref_version"]), "interval" => i, "children" => shdw, "label" => "committed " * string(i["tsdb_validfrom"]) * " valid as of " * string(Date(i["tsworld_validfrom"], UTC)))
+end
+
+
+"""
+fn
+retrieves a history node from its label 
+"""
+
+function fn(ns::Vector{Dict{String,Any}}, lbl::String)
+  for n in ns
+    if (n["version"] == lbl)
+      return (n)
+    else
+      if (length(n["children"]) > 0)
+        m = fn(n["children"], lbl)
+        if (typeof(m) != Nothing)
+          return m
+        end
+      end
+    end
+  end
 end
 
 @page("/", "app.jl.html")

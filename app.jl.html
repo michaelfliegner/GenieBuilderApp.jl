@@ -42,12 +42,45 @@
     </q-tab-panel>
     <q-tab-panel name="history">
         <h1>HISTORY</h1>
+        <q-tree children-key="children" node-key="version" ref="tree" :selected.sync="selected_version" :nodes="histo"
+            label-key="label">
+        </q-tree>
     </q-tab-panel>
     <q-tab-panel name="product">
         <h1>PRODUCT</h1>
+        <h1 v-if="prs['loaded'] == 'false'"> no product loaded</h1>
+        <q-card v-else="" class="my-card bg-purple-8 text-white">
+            <q-card-section>
+                <div class="text-h2 text-white">Product
+                    {{prs['revision']['ref_component']['value']}}
+                </div>
+                <div class="text-h2 text-white">{{prs['revision']['description']}}</div>
+            </q-card-section>
+            <div id="ihe7x" class="q-pa-md">
+                <q-list dense="" bordered="" padding="" class="rounded-borders">
+                    <q-item clickable="" v-ripple="" v-on:click="selected_product_part_idx=ppindex"
+                        v-for="(ppid,ppindex) in prs['parts']">
+                        <q-item-section>
+                            {{ppid['revision']['description']}}
+                        </q-item-section>
+                        <q-item-section>
+                            tariff id
+                            {{ppid['ref']['revision']['ref_component']['value']}}
+                        </q-item-section>
+                        <q-item-section>
+                            description {{ppid['ref']['revision']['description']}}
+                        </q-item-section>
+                        <q-item-section>
+                            Mortality Table {{ppid['ref']['revision']['mortality_table']}}
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </div>
+        </q-card>
     </q-tab-panel>
     <q-tab-panel name="csection">
-        <q-list>
+        <h1 v-if="cs['loaded'] == 'false'"> no contract loaded</h1>
+        <q-list v-else="">
             <hr />
             <q-item class="q-pa-md bg-purple-8 text-white">
                 <div class="row">
@@ -67,10 +100,11 @@
             </q-item>
             <hr />
             <q-expansion-item label="contract partners" class="q-mt-md q-mr-sm bg-deep-purple-8 text-white">
+                <q-btn label="add" v-on:click="command='add contractpartner'"></q-btn>
                 <div v-for="(pr,pridx) in cs['partner_refs']" class="q-pa-md">
                     <div class="q-pa-md">
-                        <q-checkbox label="selected" v-model="cs['partner_refs'][pridx]['selected']">
-                        </q-checkbox>
+                        <q-btn label="delete" v-on:click="selected_contractpartner_idx=pridx">
+                        </q-btn>
                     </div>
                     <div class="row">
                         <div class="col">
@@ -98,7 +132,11 @@
             <hr />
             <q-expansion-item label="product items" class="q-mt-md q-mr-sm bg-deep-purple-8 text-white">
                 <q-btn label="add" v-on:click="command='add productitem'"></q-btn>
-                <div v-for="pi in cs['product_items']" class="q-pa-md">
+                <div v-for="(pi,piidx) in cs['product_items']" class="q-pa-md">
+                    <div class="q-pa-md">
+                        <q-btn label="delete" v-on:click="seselected_productitem_idxlected_productitem_idx=piidx">
+                        </q-btn>
+                    </div>
                     <div class="row">
                         <div class="col">
                             <q-input bg-color="white" label="description"
