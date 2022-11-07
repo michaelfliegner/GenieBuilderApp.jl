@@ -1,0 +1,1 @@
+julia --startup-file=no --depwarn=no /workspace/.vscode-remote/extensions/geniebuilder.geniebuilder-0.1.23-universal/scripts/rungb.jl
