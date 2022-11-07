@@ -2,11 +2,17 @@
     <q-btn color="primary" icon="menu">
         <q-menu>
             <q-list id="ih2l">
-                <q-item clickable="" v-close-popup="" @click="command='persist'">
-                    <q-item-section>Persist</q-item-section>
+                <q-item clickable="" v-close-popup="" v-on:click="command='persist'">
+                    <q-item-section>Persist changes</q-item-section>
                 </q-item>
-                <q-item clickable="" v-close-popup="" @click="command='reset'">
-                    <q-item-section>Reset Command</q-item-section>
+                <q-item clickable="" v-close-popup="" v-on:click="command='reset'">
+                    <q-item-section>Reset changes</q-item-section>
+                </q-item>
+                <q-item clickable="" v-close-popup="" v-on:click="command='rollback'">
+                    <q-item-section>Rollback transaction</q-item-section>
+                </q-item>
+                <q-item clickable="" v-close-popup="" v-on:click="command='commit'">
+                    <q-item-section>Commit transaction</q-item-section>
                 </q-item>
                 <q-item tag="a" href="/PartnerSection" clickable="" v-close-popup="">
                     <q-item-section>Partners</q-item-section>
@@ -15,13 +21,15 @@
         </q-menu>
     </q-btn>
     <q-toolbar-title>
-        BitemporalReactive
+        <h1>Genie built Life Insurance Contract Management Prototype</h1>
     </q-toolbar-title>
 </q-toolbar>
 <q-tabs v-model="tab" align="left" class="bg-primary text-white shadow-2">
     <q-tab name="contracts" icon="format_list_bulleted" label="Search Contract"></q-tab>
     <q-tab name="csection" icon="verified_user" label="Contract Version"></q-tab>
     <q-tab name="history" icon="history" label="Contract History"></q-tab>
+    <q-tab name="partners" icon="group" label="Partners"></q-tab>
+    <q-tab name="partner" icon="person" label="Partner"></q-tab>
     <q-tab name="product" icon="functions" label="Product"></q-tab>
 </q-tabs>
 <!--</q-header>
@@ -45,6 +53,12 @@
         <q-tree children-key="children" node-key="version" ref="tree" :selected.sync="selected_version" :nodes="histo"
             label-key="label">
         </q-tree>
+    </q-tab-panel>
+    <q-tab-panel name="partners">
+        <h1>PARTNERS</h1>
+    </q-tab-panel>
+    <q-tab-panel name="partner">
+        <h1>PARTNER</h1>
     </q-tab-panel>
     <q-tab-panel name="product">
         <h1>PRODUCT</h1>
@@ -110,7 +124,6 @@
                         <div class="col">
                             <q-input bg-color="white" label="ref_component"
                                 v-model="pr['rev']['ref_component']['value']">
-
                             </q-input>
                         </div>
                         <div class="col">
