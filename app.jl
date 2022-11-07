@@ -106,11 +106,24 @@ selected
   end
 
   @onchange command begin
+    @show command
     if command == "add productitem"
       @show command
       command = ""
     end
     if command == "add contractpartner"
+      @show command
+      command = ""
+    end
+    if command == "persist"
+      @show command
+      command = ""
+    end
+    if command == "commit"
+      @show command
+      command = ""
+    end
+    if command == "new contract"
       @show command
       command = ""
     end
