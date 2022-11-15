@@ -1,15 +1,21 @@
 module App
 
 using GenieFramework
-using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, TimeZones, ToStruct
+using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, SearchLight, TimeZones, ToStruct
 @genietools
-selected
+
 @handlers begin
   @out activetxn::Integer = 0
   @in command::String = ""
   @out contracts::Vector{Contract} = []
   @out current_contract::Contract = Contract()
   @in selected_contract_idx::Integer = -1
+  @out partners::Vector{Partner} = []
+  @out current_partner::Partner = Partner()
+  @in selected_partner_idx::Integer = -1
+  @out products::Vector{Product} = []
+  @out current_product::Product = Product()
+  @in selected_product_idx::Integer = -1
   @in selected_contractpartner_idx::Integer = -1
   @in selected_productitem_idx::Integer = -1
   @in selected_version::String = ""
@@ -17,29 +23,8 @@ selected
   @out txn_time::ZonedDateTime = now(tz"Africa/Porto-Novo")
   @out ref_time::ZonedDateTime = now(tz"Africa/Porto-Novo")
   @out histo::Vector{Dict{String,Any}} = Dict{String,Any}[]
-  @in cs::Dict{String,Any} = Dict{String,Any}(
-    "tsdb_validfrom" => "2022-10-14T12:31:04.754+00:00",
-    "ref_history" => Dict{String,Any}("value" => 9),
-    "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 5), "description" => "contract 1, 4th mutation"),
-    "partner_refs" => Any[Dict{String,Any}("selected" => false, "rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "ref_role" => Dict{String,Any}("value" => 1), "description" => "policiyholder ref properties"), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:03.997+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:03.997+00:00"))],
-    "ref_entities" => Dict{String,Any}(),
-    "ref_version" => Dict{String,Any}("value" => 12),
-    "tsw_validfrom" => "2022-10-14T12:31:04.754+00:00",
-    "product_items" => Any[
-      Dict{String,Any}(
-        "tariff_items" => Any[
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "deferment" => 0, "annuity_due" => 0.0, "description" => "Main Coverage - Life", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 1), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 1), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.040+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 2), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "1980 CET - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Life Risk Insurance"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.040+00:00")), "partner_refs" => Any[Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.074+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.074+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 2), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.099+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.099+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 3), "id" => Dict{String,Any}("value" => 3), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.129+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.129+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.161+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.161+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 5), "id" => Dict{String,Any}("value" => 5), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.192+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.192+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 6), "id" => Dict{String,Any}("value" => 6), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.223+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.223+00:00"))]),
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 2), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Life Risk", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 2), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.248+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.248+00:00")), "partner_refs" => Any[Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 7), "id" => Dict{String,Any}("value" => 7), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.283+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.283+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 8), "id" => Dict{String,Any}("value" => 8), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.308+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.308+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 9), "id" => Dict{String,Any}("value" => 9), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.340+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.340+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 10), "id" => Dict{String,Any}("value" => 10), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.368+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.368+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 11), "id" => Dict{String,Any}("value" => 11), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.396+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.396+00:00")), Dict{String,Any}("rev" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_partner" => Dict{String,Any}("value" => 1), "ref_component" => Dict{String,Any}("value" => 12), "id" => Dict{String,Any}("value" => 12), "ref_role" => Dict{String,Any}("value" => 1), "description" => ""), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.425+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 1), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "date_of_birth" => "2000-01-01", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Partner 1"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.425+00:00"))]),
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 3), "deferment" => 0, "annuity_due" => 0.0, "description" => "additional cover Terminal Illness", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 3), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 3), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.452+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 3), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 2), "description" => "Terminal Illness"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.452+00:00")), "partner_refs" => Any[]),
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Terminal Illness", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 4), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.486+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.486+00:00")), "partner_refs" => Any[]),
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 3), "id" => Dict{String,Any}("value" => 5), "deferment" => 0, "annuity_due" => 0.0, "description" => "additional cover Occupational Disablity", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 5), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 2), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.516+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 4), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 3), "id" => Dict{String,Any}("value" => 3), "description" => "Occupational Disability"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.516+00:00")), "partner_refs" => Any[]),
-          Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 6), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Occ.Disablity", "ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 6), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.547+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.547+00:00")), "partner_refs" => Any[])
-        ],
-        "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 9), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "position" => 1, "description" => "from contract creation", "ref_product" => Dict{String,Any}("value" => 2))
-      ),
-      Dict{String,Any}("tariff_items" => Any[Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 7), "deferment" => 0, "annuity_due" => 0.0, "description" => "Main Coverage - Life", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 7), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 1), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.593+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 2), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "1980 CET - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 1), "id" => Dict{String,Any}("value" => 1), "description" => "Life Risk Insurance"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.593+00:00")), "partner_refs" => Any[]), Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 8), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Life Risk", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 8), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.624+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.624+00:00")), "partner_refs" => Any[]), Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 9), "deferment" => 0, "annuity_due" => 0.0, "description" => "additional cover Terminal Illness", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 9), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 3), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.658+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 3), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 2), "description" => "Terminal Illness"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.658+00:00")), "partner_refs" => Any[]), Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 10), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Terminal Illness", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 10), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.693+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.693+00:00")), "partner_refs" => Any[]), Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 3), "id" => Dict{String,Any}("value" => 11), "deferment" => 0, "annuity_due" => 0.0, "description" => "additional cover Occupational Disablity", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 11), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 2), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.725+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 4), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 3), "id" => Dict{String,Any}("value" => 3), "description" => "Occupational Disability"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.725+00:00")), "partner_refs" => Any[]), Dict{String,Any}("tariff_ref" => Dict{String,Any}("rev" => Dict{String,Any}("ref_tariff" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 12), "deferment" => 0, "annuity_due" => 0.0, "description" => "Profit participation Occ.Disablity", "ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 12), "net_premium" => 0.0, "ref_role" => Dict{String,Any}("value" => 4), "annuity_immediate" => 0.0), "ref" => Dict{String,Any}("tsdb_validfrom" => "2022-10-14T12:31:04.751+00:00", "ref_history" => Dict{String,Any}("value" => 9007199254740991), "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 5), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "mortality_table" => "2001 VBT Residual Standard Select and Ultimate - Male Nonsmoker, ANB", "ref_component" => Dict{String,Any}("value" => 4), "id" => Dict{String,Any}("value" => 4), "description" => "Profit participation"), "ref_version" => Dict{String,Any}("value" => 9007199254740991), "tsw_validfrom" => "2022-10-14T12:31:04.751+00:00")), "partner_refs" => Any[])], "revision" => Dict{String,Any}("ref_validfrom" => Dict{String,Any}("value" => 12), "ref_invalidfrom" => Dict{String,Any}("value" => 9007199254740991), "ref_component" => Dict{String,Any}("value" => 2), "id" => Dict{String,Any}("value" => 2), "position" => 2, "description" => "from contract 4th mutation", "ref_product" => Dict{String,Any}("value" => 2)))
-    ]
-  )
+  @in cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
+  @out ps::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
   @out prs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
   @in selected_product_part_idx::Integer = 0
   @in tab::String = "csection"
@@ -55,11 +40,28 @@ selected
 
 
   @onchange isready begin
+    @info "enter Load ContractPartnerRole"
+    map(find(LifeInsuranceDataModel.ContractPartnerRole)) do entry
+      @info entry.value
+      rolesContractPartner[entry.id.value] = entry.value
+    end
+    @show rolesContractPartner
+    @info "enter Load TariffItemRole"
+    map(find(LifeInsuranceDataModel.TariffItemRole)) do entry
+      rolesTariffItem[entry.id.value] = entry.value
+    end
+    @show rolesTariffItem
+    @info "enter Load TariffItemPartnerRole"
+    map(find(LifeInsuranceDataModel.TariffItemPartnerRole)) do entry
+      rolesTariffItemPartner[entry.id.value] = entry.value
+    end
+    @show rolesTariffItemPartner
     @show "App is loaded"
     contracts = LifeInsuranceDataModel.get_contracts()
     tab = "contracts"
     cs["loaded"] = "false"
     prs = Dict{String,Any}("loaded" => "false")
+    ps = Dict{String,Any}("loaded" => "false")
     @show "contractsModel pushed"
   end
 
@@ -83,13 +85,61 @@ selected
         cs["product_items"][1]["tariff_items"][1] = JSON.parse(JSON.json(tistruct))
         selected_contract_idx = -1
         tab = "csection"
+        cs["loaded"] = "false"
         @show cs["loaded"]
+        @show ti
       catch err
         println("wassis shief gegangen ")
         @error "ERROR: " exception = (err, catch_backtrace())
       end
     end
   end
+
+  @onchange selected_partner_idx begin
+    @show selected_partner_idx
+    @info "selected_partner_idx"
+    if (selected_partner_idx >= 0)
+      @show selected_partner_idx
+      @info "enter selected_partner_idx"
+      try
+        current_partner = partners[selected_partner_idx+1]
+        # histo = map(convert, LifeInsuranceDataModel.history_forest(current_contract.ref_history.value).shadowed)
+        ps = JSON.parse(JSON.json(LifeInsuranceDataModel.psection(current_partner.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn)))
+        ps["loaded"] = "true"
+        selected_partner_idx = -1
+        ps["loaded"] = "true"
+        @show ps["loaded"]
+        tab = "partner"
+        @show tab
+      catch err
+        println("wassis shief gegangen ")
+        @error "ERROR: " exception = (err, catch_backtrace())
+      end
+    end
+  end
+
+  @onchange selected_product_idx begin
+    @show selected_product_idx
+    @info "selected_product_idx"
+    if (selected_product_idx >= 0)
+      @show selected_product_idx
+      @info "enter selected_product_idx"
+      try
+        current_product = products[selected_product_idx+1]
+        # histo = map(convert, LifeInsuranceDataModel.history_forest(current_contract.ref_history.value).shadowed)
+        prs = JSON.parse(JSON.json(LifeInsuranceDataModel.prsection(current_product.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn)))
+        selected_product_idx = -1
+        prs["loaded"] = "true"
+        @show prs["loaded"]
+        tab = "product"
+        @show tab
+      catch err
+        println("wassis shief gegangen ")
+        @error "ERROR: " exception = (err, catch_backtrace())
+      end
+    end
+  end
+
 
   @onchange selected_contractpartner_idx begin
     if selected_contractpartner_idx != -1
@@ -133,6 +183,7 @@ selected
     @info "version handler"
     @show selected_version
     if selected_version != ""
+      @show tab
       try
         node = fn(histo, selected_version)
         println(node)
@@ -155,7 +206,28 @@ selected
         @error "ERROR: " exception = (err, catch_backtrace())
       end
     end
+  end
 
+  @onchange tab begin
+    @show tab
+    if (tab == "partners")
+      partners = LifeInsuranceDataModel.get_partners()
+      @info "read partners"
+    end
+    if (tab == "products")
+      products = LifeInsuranceDataModel.get_products()
+      @info "read products"
+    end
+    if (tab == "csection")
+      @show tab
+    end
+    if (tab == "product")
+      @show tab
+    end
+    if (tab == "partner")
+      @show tab
+    end
+    @info "leave tab handler"
   end
 end
 
@@ -192,6 +264,74 @@ function fn(ns::Vector{Dict{String,Any}}, lbl::String)
     end
   end
 end
+"""
+compareRevisions(t, previous::Dict{String,Any}, current::Dict{String,Any}) where {T<:BitemporalPostgres.ComponentRevision}
+compare corresponding revision elements and return nothing if equal a pair of both else
+"""
+function compareRevisions(t, previous::Dict{String,Any}, current::Dict{String,Any})
+  let changed = false
+    for (key, previous_value) in previous
+      if !(key in ("ref_validfrom", "ref_invalidfrom", "ref_component"))
+        let current_value = current[key]
+          if previous_value != current_value
+            changed = true
+          end
+        end
+      end
+    end
+    if (changed)
+      (ToStruct.tostruct(t, previous), ToStruct.tostruct(t, current))
+    end
+  end
+end
+
+"""
+compareModelStateContract(previous::Dict{String,Any}, current::Dict{String,Any})
+	compare viewmodel state for a contract section
+"""
+function compareModelStateContract(previous::Dict{String,Any}, current::Dict{String,Any})
+  diff = []
+  cr = compareRevisions(ContractRevision, previous["revision"], current["revision"])
+  if (!isnothing(cr))
+    push!(diff, cr)
+  end
+  for i in 1:size(previous["partner_refs"])[1]
+    prev = (previous["partner_refs"][i]["rev"])
+    curr = (current["partner_refs"][i]["rev"])
+    prr = compareRevisions(ContractPartnerRefRevision, prev, curr)
+    if (!isnothing(prr))
+      push!(diff, prr)
+    end
+
+  end
+  for i in 1:size(previous["product_items"])[1]
+    prevpi = previous["product_items"][i]
+    currpi = current["product_items"][i]
+    pit = compareRevisions(ProductItemRevision, prevpi["revision"], currpi["revision"])
+    if (!isnothing(pit))
+      push!(diff, pit)
+    end
+    for i in 1:size(prevpi["tariff_items"])[1]
+      prevti = prevpi["tariff_items"][i]
+      currti = currpi["tariff_items"][i]
+      tit = compareRevisions(TariffItemRevision, prevti["tariff_ref"]["rev"], currti["tariff_ref"]["rev"])
+      if (!isnothing(tit))
+        push!(diff, tit)
+      end
+      for i in 1:size(prevti["partner_refs"])[1]
+        prevtipr = prevti["partner_refs"][i]["rev"]
+        currtipr = currti["partner_refs"][i]["rev"]
+        tiprt = compareRevisions(TariffItemPartnerRefRevision, prevtipr, currtipr)
+        if (!isnoting(tiprt))
+          push!(diff, tiprt)
+        end
+      end
+    end
+  end
+  diff
+end
+
+
 
 @page("/", "app.jl.html")
 

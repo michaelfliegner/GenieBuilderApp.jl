@@ -30,10 +30,9 @@
     <q-tab name="history" icon="history" label="Contract History"></q-tab>
     <q-tab name="partners" icon="group" label="Partners"></q-tab>
     <q-tab name="partner" icon="person" label="Partner"></q-tab>
+    <q-tab name="products" icon="functions" label="Products"></q-tab>
     <q-tab name="product" icon="functions" label="Product"></q-tab>
 </q-tabs>
-<!--</q-header>
-<q-page-container>-->
 <q-tab-panels v-model="tab" animated="" swipeable="" horizontal="" transition-prev="jump-up" transition-next="jump-up">
     <q-tab-panel name="contracts">
         <template v-for="(cid,cindex) in contracts">
@@ -55,10 +54,54 @@
         </q-tree>
     </q-tab-panel>
     <q-tab-panel name="partners">
-        <h1>PARTNERS</h1>
+        <template v-for="(pid,pindex) in partners">
+            <div class="q-pa-md" style="max-width: 350px">
+                <q-list dense bordered padding class="rounded-borders">
+                    <q-item clickable v-on:click="selected_partner_idx=pindex">
+                        <q-item-section>
+                            {{pid['id']['value']}}
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </div>
+        </template>
+    </q-tab-panel>
     </q-tab-panel>
     <q-tab-panel name="partner">
         <h1>PARTNER</h1>
+        <hr />
+        <h1 v-if="ps['loaded'] == 'false'"> no partner loaded</h1>
+        <div v-else>
+            <h1></h1>partner loaded</h1>
+            <div class="row">
+                <div class="col">
+                    <q-input bg-color="white" label="Id" v-model="ps['revision']['id']['value']">
+                    </q-input>
+                </div>
+                <div class="col">
+                    <q-input bg-color="white" label="description" v-model="ps['revision']['description']['value']">
+                    </q-input>
+                </div>
+                <div class="col">
+                    <q-input bg-color="white" label="date of birthh" v-model="ps['revision']['date_of_birth']">
+                    </q-input>
+                </div>
+            </div>
+        </div>
+        <hr />
+    </q-tab-panel>
+    <q-tab-panel name="products">
+        <template v-for="(pid,pindex) in products">
+            <div class="q-pa-md" style="max-width: 350px">
+                <q-list dense bordered padding class="rounded-borders">
+                    <q-item clickable v-on:click="selected_product_idx=pindex">
+                        <q-item-section>
+                            {{pid['id']['value']}}
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </div>
+        </template>
     </q-tab-panel>
     <q-tab-panel name="product">
         <h1>PRODUCT</h1>
@@ -67,7 +110,7 @@
             <q-card-section>
                 <div class="text-h2 text-white">Product
                     {{prs['revision']['ref_component']['value']}}
-                </div>
+                </div>partner
                 <div class="text-h2 text-white">{{prs['revision']['description']}}</div>
             </q-card-section>
             <div id="ihe7x" class="q-pa-md">
@@ -94,7 +137,7 @@
     </q-tab-panel>
     <q-tab-panel name="csection">
         <h1 v-if="cs['loaded'] == 'false'"> no contract loaded</h1>
-        <q-list v-else="">
+        <q-list v-else>
             <hr />
             <q-item class="q-pa-md bg-purple-8 text-white">
                 <div class="row">
@@ -113,6 +156,7 @@
                 </div>
             </q-item>
             <hr />
+
             <q-expansion-item label="contract partners" class="q-mt-md q-mr-sm bg-deep-purple-8 text-white">
                 <q-btn label="add" v-on:click="command='add contractpartner'"></q-btn>
                 <div v-for="(pr,pridx) in cs['partner_refs']" class="q-pa-md">
