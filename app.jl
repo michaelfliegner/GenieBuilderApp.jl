@@ -16,10 +16,12 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Se
   @out products::Vector{Product} = []
   @out current_product::Product = Product()
   @in selected_product_idx::Integer = -1
+  @in contract_partner_role::Integer = 0
   @in selected_contractpartner_idx::Integer = -1
   @in selected_productitem_idx::Integer = -1
   @in selected_version::String = ""
   @out current_version::Integer = 0
+
   @out txn_time::ZonedDateTime = now(tz"Africa/Porto-Novo")
   @out ref_time::ZonedDateTime = now(tz"Africa/Porto-Novo")
   @out histo::Vector{Dict{String,Any}} = Dict{String,Any}[]
@@ -34,28 +36,17 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Se
   @in selected_product::Integer = 0
   @in show_tariff_item_partners::Bool = false
   @in show_tariff_items::Bool = false
-  @out rolesContractPartner::Dict{Integer,String} = Dict{Integer,String}()
-  @out rolesTariffItem::Dict{Integer,String} = Dict{Integer,String}()
-  @out rolesTariffItemPartner::Dict{Integer,String} = Dict{Integer,String}()
+  @out rolesContractPartner::Vector{Dict{String,Any}} = load_role(LifeInsuranceDataModel.ContractPartnerRole)
+  @out rolesTariffItem::Vector{Dict{String,Any}} = load_role(LifeInsuranceDataModel.TariffItemRole)
+  @out rolesTariffItemPartner::Vector{Dict{String,Any}} = load_role(LifeInsuranceDataModel.TariffItemPartnerRole)
 
 
   @onchange isready begin
-    @info "enter Load ContractPartnerRole"
-    map(find(LifeInsuranceDataModel.ContractPartnerRole)) do entry
-      @info entry.value
-      rolesContractPartner[entry.id.value] = entry.value
-    end
+    LifeInsuranceDataModel.connect()
     @show rolesContractPartner
-    @info "enter Load TariffItemRole"
-    map(find(LifeInsuranceDataModel.TariffItemRole)) do entry
-      rolesTariffItem[entry.id.value] = entry.value
-    end
     @show rolesTariffItem
-    @info "enter Load TariffItemPartnerRole"
-    map(find(LifeInsuranceDataModel.TariffItemPartnerRole)) do entry
-      rolesTariffItemPartner[entry.id.value] = entry.value
-    end
     @show rolesTariffItemPartner
+
     @show "App is loaded"
     contracts = LifeInsuranceDataModel.get_contracts()
     tab = "contracts"
@@ -88,6 +79,7 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Se
         cs["loaded"] = "false"
         @show cs["loaded"]
         @show ti
+        @show rolesContractPartner
       catch err
         println("wassis shief gegangen ")
         @error "ERROR: " exception = (err, catch_backtrace())
@@ -331,6 +323,12 @@ function compareModelStateContract(previous::Dict{String,Any}, current::Dict{Str
   diff
 end
 
+function load_role(role)
+  LifeInsuranceDataModel.connect()
+  map(find(role)) do entry
+    Dict{String,Any}("value" => entry.id.value, "label" => entry.value)
+  end
+end
 
 
 @page("/", "app.jl.html")
