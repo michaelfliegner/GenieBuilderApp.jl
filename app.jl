@@ -154,10 +154,15 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
     end
   end
 
+  @onchange cs begin
+    @info "contract structure modified"
+    @show cs
+  end
+
   @onchange command begin
     @show command
     if command == "create contract"
-      activetxn = 1
+      activetxn = true
       w1 = Workflow(
         type_of_entity="Contract",
         tsw_validfrom=ZonedDateTime(2014, 5, 30, 21, 0, 1, 1, tz"Africa/Porto-Novo"),
@@ -201,7 +206,7 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
         node = fn(histo, selected_version)
         @info "node"
         @show node
-        activetxn = (node["interval"]["is_committed"] == 0 ? 1 : 0)
+        activetxn = (node["interval"]["is_committed"] == 0 ? true : false)
         txn_time = node["interval"]["tsdb_validfrom"]
         ref_time = node["interval"]["tsworld_validfrom"]
         current_version = parse(Int, selected_version)
