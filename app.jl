@@ -7,7 +7,7 @@ using BitemporalPostgres, JSON, LifeInsuranceDataModel, LifeInsuranceProduct, Se
 PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
 
 @handlers begin
-  @out activetxn::Integer = 0
+  @out activetxn::Bool = false
   @in command::String = ""
   @out contracts::Vector{Contract} = []
   @out contract_ids::Dict{Int64,Int64} = Dict{Int64,Int64}()
@@ -71,10 +71,9 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
       @info "enter selected_contract_idx"
       try
         current_contract = contracts[selected_contract_idx+1]
-        activetxn = contract_ids[current_contract.id.value] == 0 ? 1 : 0
-        @show activetxn
+        activetxn = contract_ids[current_contract.id.value] == 0 ? true : false
         histo = map(convert, LifeInsuranceDataModel.history_forest(current_contract.ref_history.value).shadowed)
-        cs = JSON.parse(JSON.json(LifeInsuranceDataModel.csection(current_contract.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn)))
+        cs = JSON.parse(JSON.json(LifeInsuranceDataModel.csection(current_contract.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn ? 1 : 0)))
         cs["loaded"] = "true"
         PERSISTED_cs = copy(cs)
         if (cs["product_items"] != [])
@@ -88,7 +87,6 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
         end
         tab = "csection"
         @info "contract loaded"
-        @show cs
       catch err
         println("wassis shief gegangen ")
         @error "ERROR: " exception = (err, catch_backtrace())
@@ -105,7 +103,7 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
       try
         current_partner = partners[selected_partner_idx+1]
         # histo = map(convert, LifeInsuranceDataModel.history_forest(current_contract.ref_history.value).shadowed)
-        ps = JSON.parse(JSON.json(LifeInsuranceDataModel.psection(current_partner.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn)))
+        ps = JSON.parse(JSON.json(LifeInsuranceDataModel.psection(current_partner.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn ? 1 : 0)))
         ps["loaded"] = "true"
         selected_partner_idx = -1
         ps["loaded"] = "true"
@@ -128,7 +126,7 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
       try
         current_product = products[selected_product_idx+1]
         # histo = map(convert, LifeInsuranceDataModel.history_forest(current_contract.ref_history.value).shadowed)
-        prs = JSON.parse(JSON.json(LifeInsuranceDataModel.prsection(current_product.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn)))
+        prs = JSON.parse(JSON.json(LifeInsuranceDataModel.prsection(current_product.id.value, now(tz"Europe/Warsaw"), now(tz"Europe/Warsaw"), activetxn ? 1 : 0)))
         selected_product_idx = -1
         prs["loaded"] = "true"
         @show prs["loaded"]
@@ -212,7 +210,7 @@ PERSISTED_cs::Dict{String,Any} = Dict{String,Any}("loaded" => "false")
         @show ref_time
         @show current_version
         @info "vor csection"
-        cs = JSON.parse(JSON.json(LifeInsuranceDataModel.csection(current_contract.id.value, txn_time, ref_time, activetxn)))
+        cs = JSON.parse(JSON.json(LifeInsuranceDataModel.csection(current_contract.id.value, txn_time, ref_time, activetxn ? 1 : 0)))
         cs["loaded"] = "true"
         @info "vor tab "
         tab = "csection"
