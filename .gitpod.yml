@@ -4,7 +4,7 @@ tasks:
   - init: echo 'PATH_add /home/gitpod/julia-1.8.3/bin' > /workspace/.envrc \
           && echo 'PATH_add ~/julia-1.8.3/bin' > /workspace/.envrc \
           && echo 'export SEARCHLIGHT_USERNAME="gitpod"' >> /workspace/.envrc \
-          && echo 'export JULIA_DEPOT=/workspace' >> /workspace/.envrc \
+          && echo 'export JULIA_DEPOT_PATH=/workspace' >> /workspace/.envrc \
           && direnv allow /workspace
           && julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate();include("testsCreateContract.jl")'
 ports:
